@@ -1,12 +1,12 @@
 import sys
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import Settings, get_settings
 from app.google_oauth import build_oauth
-from app.security import is_allowed, load_allowlist
+from app.security import is_allowed, load_allowlist, validate_next
 from app.tokens import build_jwks, compute_kid, load_private_key
 
 
@@ -37,6 +37,14 @@ def build_app(settings: Settings) -> FastAPI:
     @app.get("/.well-known/jwks.json")
     def jwks() -> JSONResponse:
         return JSONResponse(build_jwks(public_key, kid))
+
+    @app.get("/login")
+    async def login(request: Request, next: str = ""):
+        if not validate_next(next):
+            raise HTTPException(status_code=400, detail="Ogiltig next-parameter")
+        request.session["next"] = next
+        redirect_uri = f"{settings.base_url}/auth/callback"
+        return await oauth.google.authorize_redirect(request, redirect_uri)
 
     return app
 
