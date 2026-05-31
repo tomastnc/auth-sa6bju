@@ -73,7 +73,11 @@ def build_app(settings: Settings) -> FastAPI:
             issuer=settings.issuer,
             audience=settings.audience,
         )
-        next_url = request.session.pop("next", settings.base_url)
+        # Omvalidera trots att next redan validerades i /login och låg i den
+        # signerade sessionen — så redirect-säkerheten inte hänger på att
+        # session_secret aldrig läcker (defense-in-depth mot open redirect).
+        raw_next = request.session.pop("next", "")
+        next_url = raw_next if validate_next(raw_next) else settings.base_url
         response = RedirectResponse(next_url, status_code=302)
         response.set_cookie(
             key=settings.cookie_name,
@@ -105,8 +109,15 @@ def build_app(settings: Settings) -> FastAPI:
     def logout(next: str = ""):
         target = next if validate_next(next) else settings.base_url
         response = RedirectResponse(target, status_code=302)
+        # Matcha originalcookiens attribut så även konservativa webbläsare
+        # säkert rensar den.
         response.delete_cookie(
-            key=settings.cookie_name, domain=settings.cookie_domain, path="/"
+            key=settings.cookie_name,
+            domain=settings.cookie_domain,
+            path="/",
+            secure=True,
+            httponly=True,
+            samesite="lax",
         )
         return response
 

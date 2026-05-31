@@ -9,6 +9,11 @@ Kopiera in i din app. I produktion: hämta och cacha JWKS automatiskt med
 
 Cookien heter `sa6bju_session`. Den är HttpOnly → läs den serverside ur
 `Cookie`-headern, inte i webbläsar-JS.
+
+FÖRTROENDEMODELL: cookien sätts för hela `.sa6bju.se`, så ALLA subdomäner får
+den med varje request. Den är HttpOnly (kan inte läsas av JS), men en komprometterad
+subdomän kan ändå skicka med den mot andra subdomäner. Kör därför bara betrodd kod
+på subdomäner under sa6bju.se — annars kan en sessionskapning ske inom domänen.
 """
 import jwt
 

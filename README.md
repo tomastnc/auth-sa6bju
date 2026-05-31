@@ -53,8 +53,9 @@ uv run uvicorn app.main:app --reload --port 8081
    (`openssl rand -hex 32`), `JWT_PRIVATE_KEY_PATH=/etc/googleauth/jwt-private.pem`,
    `ALLOWED_EMAILS_PATH=/etc/googleauth/allowed_emails.txt`.
 5. **allowed_emails.txt** i `/etc/googleauth/` — en e-post per rad.
-6. **systemd:** `cp deploy/googleauth.service /etc/systemd/system/ && systemctl enable --now googleauth`.
-7. **Caddy:** `cp deploy/auth.conf /etc/caddy/sites/ && caddy validate --config /etc/caddy/Caddyfile && caddy reload --config /etc/caddy/Caddyfile`.
+6. **Beroenden:** kör `uv sync` i `/opt/googleauth` (skapar `.venv` som systemd-enheten startar).
+7. **systemd:** `cp deploy/googleauth.service /etc/systemd/system/ && systemctl enable --now googleauth`.
+8. **Caddy:** `cp deploy/auth.conf /etc/caddy/sites/ && caddy validate --config /etc/caddy/Caddyfile && caddy reload --config /etc/caddy/Caddyfile`.
 
 ## Hur en app använder inloggningen
 
@@ -71,6 +72,14 @@ Tokens har **inget utgångsdatum**. För att ogiltigförklara alla utfärdade to
 ska sluta gälla): generera ett nytt nyckelpar, ersätt `jwt-private.pem`, starta om
 tjänsten. Alla måste då logga in på nytt — godkända släpps in igen, borttagna nekas.
 Det finns ingen individuell återkallning.
+
+## Förtroendemodell (delad cookie)
+
+Cookien gäller hela `.sa6bju.se`, så alla subdomäner får den. Den är `HttpOnly`
+(kan inte läsas av webbläsar-JS), men modellen förutsätter att **all kod som körs
+på en sa6bju.se-subdomän är betrodd** — en komprometterad subdomän kan skicka med
+cookien mot andra subdomäner. Hosta inte opålitligt/användarkontrollerat innehåll
+på en subdomän som delar denna cookie.
 
 > Obs: att bara ta bort någon ur `allowed_emails.txt` stoppar *nya* inloggningar
 > direkt (listan läses per request), men påverkar inte en token de redan har. För

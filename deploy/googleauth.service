@@ -8,7 +8,9 @@ User=googleauth
 Group=googleauth
 WorkingDirectory=/opt/googleauth
 EnvironmentFile=/opt/googleauth/.env
-ExecStart=/usr/local/bin/uv run uvicorn app.main:app --host 127.0.0.1 --port 8081
+# Kör venv-binären direkt (kör `uv sync` vid deploy först) — undviker att
+# `uv run` gör beroende-resolution/nätaccess vid varje tjänststart.
+ExecStart=/opt/googleauth/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8081
 Restart=on-failure
 RestartSec=5
 
