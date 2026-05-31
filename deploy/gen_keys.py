@@ -24,6 +24,12 @@ def main() -> None:
         print("Usage: python deploy/gen_keys.py <output-path>", file=sys.stderr)
         raise SystemExit(2)
     out = Path(sys.argv[1])
+    if out.exists():
+        print(
+            f"Fel: {out} finns redan. Ta bort filen manuellt för att rotera nyckeln.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
     out.write_bytes(generate_private_key_pem())
     out.chmod(0o600)
     print(f"Privat nyckel skriven till {out} (mode 600)")
