@@ -1,0 +1,18 @@
+[Unit]
+Description=sa6bju googleauth (Google login + JWT cookie)
+After=network.target
+
+[Service]
+Type=simple
+User=googleauth
+Group=googleauth
+WorkingDirectory=/opt/googleauth
+EnvironmentFile=/opt/googleauth/.env
+# Kör venv-binären direkt (kör `uv sync` vid deploy först) — undviker att
+# `uv run` gör beroende-resolution/nätaccess vid varje tjänststart.
+ExecStart=/opt/googleauth/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8081
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

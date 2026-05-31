@@ -1,0 +1,3 @@
+# En e-post per rad. Rader som börjar med # ignoreras.
+# Denna fil är en MALL — den riktiga allowed_emails.txt ligger bara på servern.
+din-email@gmail.com
