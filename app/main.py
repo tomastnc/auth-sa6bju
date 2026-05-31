@@ -1,5 +1,6 @@
 import sys
 
+import jwt
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -83,6 +84,29 @@ def build_app(settings: Settings) -> FastAPI:
             httponly=True,
             samesite="lax",
             path="/",
+        )
+        return response
+
+    @app.get("/me")
+    def me(request: Request):
+        token = request.cookies.get(settings.cookie_name)
+        if not token:
+            raise HTTPException(status_code=401, detail="Ingen session")
+        try:
+            claims = jwt.decode(
+                token, public_key, algorithms=["EdDSA"],
+                audience=settings.audience, issuer=settings.issuer,
+            )
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Ogiltig token")
+        return {"email": claims["email"], "name": claims.get("name"), "sub": claims["sub"]}
+
+    @app.get("/logout")
+    def logout(next: str = ""):
+        target = next if validate_next(next) else settings.base_url
+        response = RedirectResponse(target, status_code=302)
+        response.delete_cookie(
+            key=settings.cookie_name, domain=settings.cookie_domain, path="/"
         )
         return response
 
