@@ -1,4 +1,5 @@
 """Säkerhetshjälpare: next-validering och allowlist."""
+from pathlib import Path
 from urllib.parse import urlparse
 
 ALLOWED_HOST = "sa6bju.se"
@@ -17,3 +18,22 @@ def validate_next(next_url: str) -> bool:
         return False
     host = parsed.hostname.lower()
     return host == ALLOWED_HOST or host.endswith("." + ALLOWED_HOST)
+
+
+def load_allowlist(path: Path) -> set[str]:
+    """Läser allowlist-filen: en e-post per rad, '#' = kommentar.
+    Saknad fil ger tom mängd (= ingen släpps in)."""
+    path = Path(path)
+    if not path.exists():
+        return set()
+    emails = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        emails.add(line.lower())
+    return emails
+
+
+def is_allowed(email: str, allowlist: set[str]) -> bool:
+    return email.strip().lower() in allowlist
