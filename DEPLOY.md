@@ -53,6 +53,20 @@ nano /etc/googleauth/allowed_emails.txt   # en e-post per rad, # = kommentar
 
 Koden kopieras från arbetsmaskinen (servern har inte git-remote mot GitHub).
 
+**Standardväg — ett kommando som pushar OCH deployar:**
+
+```bash
+./deploy/push.sh
+```
+
+Det vägrar köra på en smutsig arbetskopia, pushar till GitHub, kopierar koden,
+kör `uv sync` automatiskt om `pyproject.toml`/`uv.lock` ändrats i senaste commit,
+startar om tjänsten, väntar in healthz och rökverifierar att live-`/login`
+skickar `prompt=select_account` (annars exit ≠ 0). Server kan överstyras med
+`GOOGLEAUTH_SERVER=root@annan.host ./deploy/push.sh`.
+
+<details><summary>Manuella steg (om du behöver göra det för hand)</summary>
+
 ```bash
 # Från /home/tomas/infra/googleauth på arbetsmaskinen:
 tar czf - --exclude=.git --exclude=.venv --exclude=__pycache__ --exclude=docs . \
@@ -70,6 +84,8 @@ ssh root@caddy.sa6bju.se '
 
 `UV_PYTHON_INSTALL_DIR=/opt/uv/python` ligger i `/etc/environment` så `uv sync`
 bygger `.venv` mot den delade Pythonen, inte en under `/root`.
+
+</details>
 
 ## Återkallning / nyckelrotation
 
