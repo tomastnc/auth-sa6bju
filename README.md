@@ -53,7 +53,10 @@ uv run uvicorn app.main:app --reload --port 8081
    (`openssl rand -hex 32`), `JWT_PRIVATE_KEY_PATH=/etc/googleauth/jwt-private.pem`,
    `ALLOWED_EMAILS_PATH=/etc/googleauth/allowed_emails.txt`.
 5. **allowed_emails.txt** i `/etc/googleauth/` — en e-post per rad.
-6. **Beroenden:** kör `uv sync` i `/opt/googleauth` (skapar `.venv` som systemd-enheten startar).
+6. **Beroenden:** sätt `UV_PYTHON_INSTALL_DIR=/opt/uv/python` (delad, världsläsbar plats —
+   annars hamnar den uv-hämtade Pythonen under `/root` och tjänsteanvändaren `googleauth`
+   kan inte nå den → `203/EXEC`). Persistera i `/etc/environment`. Kör sedan `uv sync` i
+   `/opt/googleauth` (skapar `.venv` som systemd-enheten startar), `chmod -R a+rX /opt/uv`.
 7. **systemd:** `cp deploy/googleauth.service /etc/systemd/system/ && systemctl enable --now googleauth`.
 8. **Caddy:** `cp deploy/auth.conf /etc/caddy/sites/ && caddy validate --config /etc/caddy/Caddyfile && caddy reload --config /etc/caddy/Caddyfile`.
 
