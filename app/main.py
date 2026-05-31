@@ -52,13 +52,18 @@ def build_app(settings: Settings) -> FastAPI:
         userinfo = token.get("userinfo") or {}
         email = (userinfo.get("email") or "").strip()
         verified = bool(userinfo.get("email_verified"))
+        sub = (userinfo.get("sub") or "").strip()
 
+        # Läses per request med flit: en borttagning ur listan slår igenom
+        # direkt utan omstart (kompletterar nyckelrotation som återkallning).
         allowlist = load_allowlist(settings.allowed_emails_path)
-        if not verified or not is_allowed(email, allowlist):
+        # sub är den stabila identiteten appar nycklar på — kräv den, annars
+        # vore en tom sub semantiskt fel. verified + allowlist = fail-closed.
+        if not sub or not verified or not is_allowed(email, allowlist):
             raise HTTPException(status_code=403, detail="Åtkomst nekad")
 
         jwt_token = mint_session_token(
-            sub=userinfo.get("sub", ""),
+            sub=sub,
             email=email,
             email_verified=verified,
             name=userinfo.get("name", ""),

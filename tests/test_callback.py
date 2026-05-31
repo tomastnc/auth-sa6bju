@@ -61,3 +61,23 @@ def test_callback_rejects_unverified_email(tmp_path):
     client = TestClient(app)
     resp = client.get("/auth/callback?code=x&state=y", follow_redirects=False)
     assert resp.status_code == 403
+
+
+def test_callback_rejects_missing_sub(tmp_path):
+    settings = _settings(tmp_path)
+    app = build_app(settings)
+    _mock_google(app, email="foo@example.com", sub="")
+    client = TestClient(app)
+    resp = client.get("/auth/callback?code=x&state=y", follow_redirects=False)
+    assert resp.status_code == 403
+
+
+def test_callback_without_next_falls_back_to_base_url(tmp_path):
+    settings = _settings(tmp_path)
+    app = build_app(settings)
+    _mock_google(app, email="foo@example.com")
+    client = TestClient(app, base_url="https://testserver")
+    # gå INTE via /login först → ingen next i sessionen
+    resp = client.get("/auth/callback?code=x&state=y", follow_redirects=False)
+    assert resp.status_code in (302, 307)
+    assert resp.headers["location"] == settings.base_url
