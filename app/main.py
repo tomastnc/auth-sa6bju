@@ -1,13 +1,13 @@
 import sys
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import Settings, get_settings
 from app.google_oauth import build_oauth
 from app.security import is_allowed, load_allowlist, validate_next
-from app.tokens import build_jwks, compute_kid, load_private_key
+from app.tokens import build_jwks, compute_kid, load_private_key, mint_session_token
 
 
 def build_app(settings: Settings) -> FastAPI:
@@ -45,6 +45,41 @@ def build_app(settings: Settings) -> FastAPI:
         request.session["next"] = next
         redirect_uri = f"{settings.base_url}/auth/callback"
         return await oauth.google.authorize_redirect(request, redirect_uri)
+
+    @app.get("/auth/callback")
+    async def auth_callback(request: Request):
+        token = await oauth.google.authorize_access_token(request)
+        userinfo = token.get("userinfo") or {}
+        email = (userinfo.get("email") or "").strip()
+        verified = bool(userinfo.get("email_verified"))
+
+        allowlist = load_allowlist(settings.allowed_emails_path)
+        if not verified or not is_allowed(email, allowlist):
+            raise HTTPException(status_code=403, detail="Åtkomst nekad")
+
+        jwt_token = mint_session_token(
+            sub=userinfo.get("sub", ""),
+            email=email,
+            email_verified=verified,
+            name=userinfo.get("name", ""),
+            private_key=app.state.private_key,
+            kid=app.state.kid,
+            issuer=settings.issuer,
+            audience=settings.audience,
+        )
+        next_url = request.session.pop("next", settings.base_url)
+        response = RedirectResponse(next_url, status_code=302)
+        response.set_cookie(
+            key=settings.cookie_name,
+            value=jwt_token,
+            domain=settings.cookie_domain,
+            max_age=settings.cookie_max_age,
+            secure=True,
+            httponly=True,
+            samesite="lax",
+            path="/",
+        )
+        return response
 
     return app
 
