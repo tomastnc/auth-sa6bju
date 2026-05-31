@@ -1,0 +1,6 @@
+.env
+allowed_emails.txt
+*.pem
+*-private.*
+__pycache__/
+.venv/
