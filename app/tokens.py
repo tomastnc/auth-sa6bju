@@ -55,10 +55,6 @@ def mint_session_token(
 
 
 def build_jwks(public_key: Ed25519PublicKey, kid: str) -> dict:
-    try:
-        jwk = OKPAlgorithm.to_jwk(public_key, as_dict=True)
-    except TypeError:
-        import json
-        jwk = json.loads(OKPAlgorithm.to_jwk(public_key))
+    jwk = OKPAlgorithm.to_jwk(public_key, as_dict=True)
     jwk.update({"kid": kid, "use": "sig", "alg": "EdDSA"})
     return {"keys": [jwk]}
