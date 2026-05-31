@@ -26,3 +26,7 @@ def test_login_redirects_to_google_for_valid_next(tmp_path):
     assert resp.status_code in (302, 307)
     assert "accounts.google.com" in resp.headers["location"]
     app.state.oauth.google.authorize_redirect.assert_awaited_once()
+    # Säkra att kontoväljaren tvingas fram — annars återinloggar Google tyst
+    # efter /logout och utloggningen blir verkningslös.
+    _, kwargs = app.state.oauth.google.authorize_redirect.await_args
+    assert kwargs.get("prompt") == "select_account"

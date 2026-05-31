@@ -45,7 +45,14 @@ def build_app(settings: Settings) -> FastAPI:
             raise HTTPException(status_code=400, detail="Ogiltig next-parameter")
         request.session["next"] = next
         redirect_uri = f"{settings.base_url}/auth/callback"
-        return await oauth.google.authorize_redirect(request, redirect_uri)
+        # prompt=select_account tvingar Google att visa kontoväljaren även när
+        # Google-sessionen lever. Utan den återinloggar Google tyst direkt efter
+        # /logout (vår cookie rensas, men SSO mintar en ny på millisekunder) —
+        # vilket fick utloggningen att kännas verkningslös. Loggar inte ut dig
+        # ur Google globalt; kräver bara ett aktivt kontoval.
+        return await oauth.google.authorize_redirect(
+            request, redirect_uri, prompt="select_account"
+        )
 
     @app.get("/auth/callback")
     async def auth_callback(request: Request):

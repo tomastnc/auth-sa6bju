@@ -109,3 +109,4 @@ caddy reload --config /etc/caddy/Caddyfile
 | `404` på `/` | Förväntat — ingen rotrutt. Använd `/login?next=…`, `/me`, `/healthz`. |
 | "Ingen kontakt" / hittar inte servern | Klient-DNS-cache (negativ-TTL upp till 3h efter att posten skapades). Spola DNS eller testa från annat nät. |
 | Tjänsten startar men login 500:ar | Felaktiga/saknade Google-creds i `.env`. Vid felkonfig loggar appen `VARNING: ...` till stderr (`journalctl`). |
+| "Utloggning har ingen effekt" | Förväntat före `prompt=select_account`: `/logout` rensar cookien men Google-SSO återinloggar tyst. Login tvingar nu fram kontoväljaren; användaren loggas inte ut ur Google globalt. |

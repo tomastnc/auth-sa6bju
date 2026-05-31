@@ -27,6 +27,12 @@ Browser → app.sa6bju.se (ingen cookie) → redirect → auth.sa6bju.se/login
 | `GET /logout?next=<url>` | Rensar cookien, redirectar |
 | `GET /healthz` | Hälsokontroll |
 
+**Utloggning:** `/logout` rensar `*.sa6bju.se`-cookien men rör inte din Google-session.
+Vid nästa `/login` tvingas Googles kontoväljare fram (`prompt=select_account`), så
+återinloggning kräver ett aktivt kontoval — inte lösenord, och du loggas inte ut ur
+Google globalt. Utan detta återinloggar Google-SSO tyst direkt och utloggningen
+ser verkningslös ut.
+
 ## Lokal utveckling
 
 ```bash
