@@ -1,3 +1,5 @@
+import sys
+
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -45,7 +47,11 @@ def _build_default() -> FastAPI:
     testerna använder build_app(settings) direkt med en temp-nyckel."""
     try:
         return build_app(get_settings())
-    except Exception:
+    except Exception as exc:
+        # Förväntat vid testimport (ingen .env). I produktion betyder det dock
+        # en felkonfiguration — logga tydligt så den syns i journalctl istället
+        # för att tjänsten startar tyst trasig.
+        print(f"VARNING: googleauth kunde inte konfigureras: {exc!r}", file=sys.stderr)
         fallback = FastAPI(title="sa6bju googleauth (unconfigured)")
 
         @fallback.get("/healthz")
